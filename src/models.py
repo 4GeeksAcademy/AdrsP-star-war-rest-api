@@ -3,7 +3,6 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 class User(db.Model):
-   # __tablename__="user"
 
     id = db.Column(db.Integer, primary_key=True)
     userName = db.Column(db.String(120), unique=True, nullable = False)
@@ -11,19 +10,18 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable= False)
     favorites = db.relationship("Favorites")
 
-    def __repr__(self):
-        return '<User %r>' % self.userName
+    def __repr__(self):                        # la funcion repr dentro de la clase User le permite regresar la representacion grafica
+        return '<User %r>' % self.userName      # de la estructura de tabla que estamos construyendo
     
-    def serialize(self):
-        return {
-            "id": self.id,
-            "email": self.email,
+    def serialize(self):                         # el serialize se encarga de darle una estructura tipo objeto a los datos que ingresamos tipo base de datos de sql alchemy
+        return {                                 # ambas funciones (repr y serialize usan de argunmento self porque estan dentro del class User)
+            "id": self.id,                      # y asi toman la informacion definida dentro de la funcion 
+            "email": self.email,                # ambas funciones se deben definir para cada clase creada
             "userName": self.userName, 
             # do not serialize the password, its a security breach
         }
 
 class Planet(db.Model):
-   # __tablename__="planet"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=True, nullable = False)
@@ -34,7 +32,6 @@ class Planet(db.Model):
     gravity = db.Column(db.String(120), unique=False)
     surface_water = db.Column(db.Integer, unique=False)
     population = db.Column(db.Integer, unique=False)
-    #Favorites_id=db.Column(db.Integer, db.ForeignKey("favorites.id"))
     favorites = db.relationship("Favorites")
 
     def __repr__(self):
@@ -55,18 +52,16 @@ class Planet(db.Model):
         }
 
 class Character(db.Model):
-   # __tablename__="character"
 
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(120), unique=False, nullable = False)
-    height = db.Column(db.Integer, unique=False, nullable=False)
-    mass = db.Column(db.Integer, unique=False, nullable=False)
-    hair_color = db.Column(db.String(120), unique=False, nullable = False)
-    skin_color = db.Column(db.String(120), unique=False, nullable = False)
-    eye_color = db.Column(db.String(120), unique=False, nullable = False)
-    birth_year = db.Column(db.String(120), unique=False, nullable = False)
-    homeWorld = db.Column(db.String(120), unique=False, nullable = False)
-    #Favorites_id=db.Column(db.Integer, db.ForeignKey("favorites.id"))
+    height = db.Column(db.Integer, unique=False)
+    mass = db.Column(db.Integer, unique=False)
+    hair_color = db.Column(db.String(120), unique=False)
+    skin_color = db.Column(db.String(120), unique=False)
+    eye_color = db.Column(db.String(120), unique=False)
+    birth_year = db.Column(db.String(120), unique=False)
+    homeWorld = db.Column(db.String(120), unique=False)
     favorites = db.relationship("Favorites")
 
     def __repr__(self):
@@ -88,12 +83,14 @@ class Character(db.Model):
 
 
 class Favorites(db.Model):
-   # __tablename__="favorites"
-
     id = db.Column(db.Integer, primary_key = True)
-    planets_id = db.Column(db.Integer, db.ForeignKey("Planets.id"))
-    character_id = db.Column(db.Integer, db.ForeignKey("Character.id"))
-    user_id = db.Column(db.Integer, db.ForeignKey("User.id"))
+    planets_id = db.Column(db.Integer, db.ForeignKey("planet.id"))
+    character_id = db.Column(db.Integer, db.ForeignKey("character.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    # Add the back_populates attribute             # se debe establecer el backpopulates para la relacion entre ellos
+    planet = db.relationship("Planet", back_populates="favorites")
+    character = db.relationship("Character", back_populates="favorites")
+    user = db.relationship("User", back_populates="favorites")
 
     def __repr__(self):
         return '<Favorites %r>' % self.id

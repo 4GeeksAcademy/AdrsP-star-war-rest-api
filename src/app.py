@@ -8,110 +8,12 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, User, Character, Favorites, Planet
 #from models import Person
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 
-#base de datos personas 
-
-people = {
-    "count": 82, 
-    "next": "https://swapi.dev/api/people/?page=2", 
-    "previous": None, 
-    "results": [
-        {
-            "name": "Luke Skywalker", 
-            "height": "172", 
-            "mass": "77", 
-            "hair_color": "blond", 
-            "skin_color": "fair", 
-            "eye_color": "blue", 
-            "birth_year": "19BBY", 
-            "gender": "male", 
-            "homeworld": "https://swapi.dev/api/planets/1/", 
-            "films": [
-                "https://swapi.dev/api/films/1/", 
-                "https://swapi.dev/api/films/2/", 
-                "https://swapi.dev/api/films/3/", 
-                "https://swapi.dev/api/films/6/"
-            ], 
-            "species": [], 
-            "vehicles": [
-                "https://swapi.dev/api/vehicles/14/", 
-                "https://swapi.dev/api/vehicles/30/"
-            ], 
-            "starships": [
-                "https://swapi.dev/api/starships/12/", 
-                "https://swapi.dev/api/starships/22/"
-            ], 
-            "created": "2014-12-09T13:50:51.644000Z", 
-            "edited": "2014-12-20T21:17:56.891000Z", 
-            "url": "https://swapi.dev/api/people/1/"
-        },
-    ]
-}
-
-# base de datos planetas
-
-planets = {
-    "count": 60, 
-    "next": "https://swapi.dev/api/planets/?page=2", 
-    "previous": None, 
-    "results": [
-        {
-            "name": "Tatooine", 
-            "rotation_period": "23", 
-            "orbital_period": "304", 
-            "diameter": "10465", 
-            "climate": "arid", 
-            "gravity": "1 standard", 
-            "terrain": "desert", 
-            "surface_water": "1", 
-            "population": "200000", 
-            "residents": [
-                "https://swapi.dev/api/people/1/", 
-                "https://swapi.dev/api/people/2/", 
-                "https://swapi.dev/api/people/4/", 
-                "https://swapi.dev/api/people/6/", 
-                "https://swapi.dev/api/people/7/", 
-                "https://swapi.dev/api/people/8/", 
-                "https://swapi.dev/api/people/9/", 
-                "https://swapi.dev/api/people/11/", 
-                "https://swapi.dev/api/people/43/", 
-                "https://swapi.dev/api/people/62/"
-            ], 
-            "films": [
-                "https://swapi.dev/api/films/1/", 
-                "https://swapi.dev/api/films/3/", 
-                "https://swapi.dev/api/films/4/", 
-                "https://swapi.dev/api/films/5/", 
-                "https://swapi.dev/api/films/6/"
-            ], 
-            "created": "2014-12-09T13:50:49.641000Z", 
-            "edited": "2014-12-20T20:58:18.411000Z", 
-            "url": "https://swapi.dev/api/planets/1/"
-        },
-    ]
-}
-
-# base de datos usuarios? 
-
-blog_users = [
-    {
-    "first_name": "Bob",
-    "last_name": "Dylan",
-    "email": "bob@dylan.com",
-    "password": "asdasdasd"
-    },
-    {
-    "first_name": "Jane",
-    "last_name": "Doe",
-    "email": "jane@doe.com",
-    "password": "xdxdxd"
-    },
-]
 
 db_url = os.getenv("DATABASE_URL")
 if db_url is not None:
@@ -135,54 +37,75 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
+# get all users
+
 @app.route('/user', methods=['GET'])
 def handle_hello():
+    user = User.query.all() # trae una lista de objetos de la tabla user
+    results = list(map(lambda usuarios : usuarios.serialize(), user)) # se realiza el mapeo y posterior generacion de la lista con los resultados
+    
+    return jsonify(results), 200
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+# get one user
 
-    return jsonify(response_body), 200
+@app.route('/user/<int:user_id>', methods=['GET'])
+def handle_user(user_id):
+    user = User.query.filter_by(id = user_id).first() 
+    results = user.serialize()
+    
+    return jsonify(results), 200
 
-# mis metodos para personas
-# 1 er metodo consigue a todas las personas
-@app.route('/people', methods=['GET'])
+# 1 er metodo consigue a todas las personas / characters
+@app.route('/characters', methods=['GET'])
 def get_all_people():
-    json_text = jsonify(people)
-    return json_text
+    people = Character.query.all()
+    results = list(map(lambda character : character.serialize(), people))
+
+    json_text = jsonify(results)
+    return json_text, 200
 
 #2ndo metodo para una persona en especifico
 
-@app.route('/people/<int:people_id>')
-def get_person(people_id):
-    people_list = people['results']
-    person = jsonify(people_list[people_id-1])
-    return person
+@app.route('/characters/<int:character_id>', methods=['GET'])
+def get_person(character_id):
+    character = Character.query.filter_by(id = character_id).first()
+    results = character.serialize()
+    return results
 
 # 3er metodo consigue todos los planetas
 @app.route('/planets', methods=['GET'])
 def get_all_planets():
-    json_text = jsonify(planets)
-    return json_text
+    planet_list = Planet.query.all()
+    results = list(map(lambda planeta : planeta.serialize(), planet_list))
+    return results , 200
 
 # 4to metodo consigue un planeta en especifico
-@app.route('/planets/<int:planet_id>')
+@app.route('/planets/<int:planet_id>', methods=['GET'])
 def get_planet(planet_id):
-    planets_list = planets['results']
-    planet = jsonify(planets_list[planet_id-1])
-    return planet
+    planet = Planet.query.filter_by(id = planet_id).first()
+    results = planet.serialize()
+    return results , 200
 
-# 5to metodo consigue la lista completa de usuarios del blog
-@app.route('/blog-users', methods=['GET'])
-def get_all_users():
-    json_text = jsonify(blog_users)
-    return json_text
+# lista de favoritos x usuario
 
-# 6to metodo consigue los datos de un usuario
-@app.route('/blog-users/<int:user_id>', methods=['GET'])
-def get_user(user_id):
-    user_info = blog_users[user_id-1]
-    return jsonify(user_info)
+@app.route('/user/<int:id_user>/favorites', methods=['GET'])
+def get_user_favorites(id_user):
+    user_favorites = Favorites.query.filter_by(user_id = id_user)
+    results = list(map(lambda favorite: favorite.serialize(), user_favorites))
+    return results , 200
+
+# asignar favoritos a un usuario
+
+@app.route('/user/<int:id_user>/favorites', methods=['POST'])
+def add_new_todo(id_user):
+    data = request.json  # Assuming data is sent in JSON format
+    data['user_id'] = str(id_user) # asigno nueva key al diccionario "data" y a esa key le asigno el usuario de la ruta
+    new_record = Favorites(**data)
+
+    db.session.add(new_record)
+    db.session.commit()
+
+    return jsonify({'message': 'Record created successfully'}), 201
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
