@@ -48,7 +48,6 @@ class Planet(db.Model):
             "gravity": self.gravity,
             "surface_water": self.surface_water,
             "population": self.population, 
-            # do not serialize the password, its a security breach
         }
 
 class Character(db.Model):
@@ -78,7 +77,6 @@ class Character(db.Model):
             "eye_color": self.eye_color,
             "birth_year": self.birth_year,
             "homeWorld": self.homeWorld,
-            # do not serialize the password, its a security breach
         }
 
 
@@ -101,6 +99,5 @@ class Favorites(db.Model):
             "planets_id": self.planets_id,
             "character_id": self.character_id,
             "user_id": self.user_id
-            # do not serialize the password, its a security breach
         }
     

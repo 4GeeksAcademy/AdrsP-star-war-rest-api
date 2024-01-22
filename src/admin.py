@@ -11,7 +11,7 @@ def setup_admin(app):
     
     # Add your models here, for example this is how we add a the User model to the admin
     admin.add_view(ModelView(User, db.session))       # cada uno de estos modelos se agrega a la interfaz grafica generada, se debe crear 
-    admin.add_view(ModelView(Planet, db.session))     # una vista por modelo pero todos se muestran en la navbar y se desplegan uno a uno
+    admin.add_view(ModelView(Planet, db.session))     # una vista por modelo pero todos se muestran en la navbar de la interfaz grafica del back y se desplegan uno a uno
     admin.add_view(ModelView(Favorites, db.session))  # automaticamente 
     admin.add_view(ModelView(Character, db.session))
 

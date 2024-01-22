@@ -2,6 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 import os
+import json
 from flask import Flask, request, jsonify, url_for
 from flask_migrate import Migrate
 from flask_swagger import swagger
@@ -55,7 +56,7 @@ def handle_user(user_id):
     
     return jsonify(results), 200
 
-# 1 er metodo consigue a todas las personas / characters
+# metodo consigue a todas las personas / characters
 @app.route('/characters', methods=['GET'])
 def get_all_people():
     people = Character.query.all()
@@ -64,7 +65,7 @@ def get_all_people():
     json_text = jsonify(results)
     return json_text, 200
 
-#2ndo metodo para una persona en especifico
+# metodo para una persona en especifico
 
 @app.route('/characters/<int:character_id>', methods=['GET'])
 def get_person(character_id):
@@ -72,19 +73,77 @@ def get_person(character_id):
     results = character.serialize()
     return results
 
-# 3er metodo consigue todos los planetas
+# metodo consigue todos los planetas
 @app.route('/planets', methods=['GET'])
 def get_all_planets():
     planet_list = Planet.query.all()
     results = list(map(lambda planeta : planeta.serialize(), planet_list))
     return results , 200
 
-# 4to metodo consigue un planeta en especifico
+# metodo consigue un planeta en especifico
 @app.route('/planets/<int:planet_id>', methods=['GET'])
 def get_planet(planet_id):
     planet = Planet.query.filter_by(id = planet_id).first()
     results = planet.serialize()
     return results , 200
+
+# put planeta
+@app.route('/planets/<int:planet_id>', methods=['PUT'])            # decorador con la ruta de donde se obtiene el id del planeta a actualizar
+def put_planet(planet_id):
+    planet = Planet.query.filter_by(id = planet_id).first()        # se busca en la base de datos el diccionario con el planeta requerido por el id que le pasamos de la ruta
+    body = json.loads(request.data)                                # se recupera la data de la solicitud (que esta en json) y se pasa a un diccionario en python para poder trabajar con la funcion .loads de la biblioteca json por eso json.loads
+    if planet is None:                                             # condicional si no existe el planeta por el id introducido se da el mensaje y codigo de error
+        return jsonify({'message': 'no existe el planeta'}), 404
+    
+    if 'name' in body:                                             # serie de condicionales para actualizar los campos del diccionario 'planeta' seleccionado se va a
+        planet.name = body['name']                                 # preguntar a cada uno de los campos introducidos en el modelo de datos de tabla recreados en models.py para verificarlos 1 a 1
+    
+    if "climate" in body:
+        planet.climate = body['climate']
+
+    if "rotation_period" in body:
+        planet.rotation_period = body['rotation_period']
+
+    if "orbital_period" in body:
+        planet.orbital_period = body["orbital_period"]
+
+    if "diameter" in body:
+        planet.diameter = body['diameter']
+
+    if "gravity" in body:
+        planet.gravity = body['gravity']
+    
+    if "surface_water" in body:
+        planet.surface_water = body["surface_water"]
+
+    if "population" in body:
+        planet.population = body['population']
+
+    db.session.commit()
+
+    return jsonify({'message': 'se modifico el planeta'})
+
+# eliminar un planeta (metodo estrella de la muerte)
+
+@app.route('/planets/<int:planet_id>', methods=['DELETE'])
+def death_star(planet_id):
+    planet = Planet.query.filter_by(id = planet_id).first()
+
+    if planet is None:
+        return ({"message": "no existe el planeta"}), 404
+    
+    db.session.delete(planet)
+    db.session.commit()
+    return ({"message": "no debiste desafiar al imperio"}), 200
+        
+
+# lista de favoritos totales
+
+@app.route('/favorite', methods=['GET'])
+def get_all_favorites():
+    all_favorites = Favorites.query.all()
+    results = list(map(lambda favorite : favorite.serialize(), all_favorites))
+    return results, 200
 
 # lista de favoritos x usuario
 
@@ -94,7 +153,7 @@ def get_user_favorites(id_user):
     results = list(map(lambda favorite: favorite.serialize(), user_favorites))
     return results , 200
 
-# asignar favoritos a un usuario
+# asignar favoritos a un usuario 
 
 @app.route('/user/<int:id_user>/favorites', methods=['POST'])
 def add_new_todo(id_user):
@@ -106,6 +165,33 @@ def add_new_todo(id_user):
     db.session.commit()
 
     return jsonify({'message': 'Record created successfully'}), 201
+
+# asignar favoritos 2ndo metodo 
+
+@app.route('/favorite', methods=['POST'])
+def add_Favorites():
+    body = json.loads(request.data)
+    new_Favorito = Favorites(
+         user_id=body["user_id"], 
+         planets_id=body["planets_id"], 
+         character_id=body["character_id"])
+                    
+    response_body = {"msg": "Favorito creado"}
+    return jsonify(response_body), 201
+
+# eliminar favorito 
+
+@app.route('/favorite/<int:id_favorite>', methods=['DELETE'])
+def delete_favorite(id_favorite):
+    
+    planet = Favorites.query.filter_by(id = id_favorite).first()
+   
+    if planet is None:
+        return ({"message": "no existe el favorito"}), 404
+    
+    db.session.delete(planet)
+    db.session.commit()
+    return ({"message": "favorito eliminado"}), 200
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
