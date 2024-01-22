@@ -86,6 +86,27 @@ def get_planet(planet_id):
     planet = Planet.query.filter_by(id = planet_id).first()
     results = planet.serialize()
     return results , 200
+# post un planeta
+
+@app.route('/planets', methods=['POST'])
+def add_planet():
+    body = json.loads(request.data)
+
+    new_Planet = Planet(
+        name = body['name'],
+        rotation_period = body['rotation_period'],
+        orbital_period = body['orbital_period'],
+        diameter = body['diameter'],
+        climate = body['climate'],
+        gravity = body['gravity'],
+        surface_water = body['surface_water'],
+        population = body['population'])
+    
+    db.session.add(new_Planet)
+    db.session.commit()
+
+    response_body = {"msg": "planeta creado"}
+    return jsonify(response_body), 201
 
 # put planeta
 @app.route('/planets/<int:planet_id>', methods=['PUT'])            # decorador con la ruta de donde se obtiene el id del planeta a actualizar
@@ -121,7 +142,7 @@ def put_planet(planet_id):
 
     db.session.commit()
 
-    return jsonify({'message': 'se modifico el planeta'})
+    return jsonify({'message': 'se modifico el planeta'})    
 
 # eliminar un planeta (metodo estrella de la muerte)
 
@@ -175,6 +196,9 @@ def add_Favorites():
          user_id=body["user_id"], 
          planets_id=body["planets_id"], 
          character_id=body["character_id"])
+
+    db.session.add(new_Favorito)
+    db.session.commit()
                     
     response_body = {"msg": "Favorito creado"}
     return jsonify(response_body), 201
